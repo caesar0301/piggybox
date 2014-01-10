@@ -20,6 +20,7 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
+import org.joda.time.Period;
 
 import sjtu.omnilab.pig.utils.tree.TreeNode;
 
@@ -34,8 +35,19 @@ import com.google.common.net.InternetDomainName;
  *
  */
 public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
-	private AEM aemModel = new AEM();
-	private DataBag outputBag=BagFactory.getInstance().newDefaultBag();
+	private double readingTime;
+	private AEM aemModel = null;
+	private DataBag outputBag = null;
+	
+	public DetectActivity(){
+		this("2s");
+	}
+	
+	public DetectActivity(String timeSpec){
+		Period p = new Period("PT" + timeSpec.toUpperCase());
+	    this.readingTime = p.toStandardSeconds().getSeconds();
+		cleanup();
+	}
 	
 	@Override
 	public void accumulate(Tuple b) throws ExecException {
@@ -47,13 +59,14 @@ public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
 			if (okToDump && actCnt > 0){
 				dumpActivitiesToBag(0, actCnt-1); // leave the latest added.
 			}
+			reporter.progress();
 		}
 	}
 
 	@Override
 	public void cleanup() {
 		this.outputBag = BagFactory.getInstance().newDefaultBag();
-		this.aemModel = new AEM(2); // set to 2.5s
+		this.aemModel = new AEM(readingTime); // set to 2.5s
 	}
 
 	@Override
@@ -431,7 +444,7 @@ class Activity {
 			this.root = entity.getTreeNode();
 		if ( root != null && referrer != null ){
 			// add entity and append it to its referred entity.
-			if ( ! root.dominates(referrer.getTreeNode()))
+			if ( ! referrer.getTreeNode().isNodeAncestor(root))
 				throw new ExecException("Given referrer entity does not exists in this activity.");
 			referrer.getTreeNode().add(entity.getTreeNode());
 		}
@@ -444,7 +457,7 @@ class Activity {
 	 * @return
 	 */
 	public boolean contains(Entity entity){
-		if ( root != null && root.dominates(entity.getTreeNode()))
+		if ( root != null && entity.getTreeNode().isNodeAncestor(root) )
 			return true;
 		return false;
 	}

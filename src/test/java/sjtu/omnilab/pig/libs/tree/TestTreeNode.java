@@ -15,17 +15,14 @@ public class TestTreeNode {
 		node1.add(node3);
 		node2.add(node4);
 		
-		node1.remove(node2);
-		
 		for ( TreeNode node : node1.children())
 			System.out.println(node);
-		System.out.println(node1.children().size());
 		
-		System.out.println(node1.dominates(node4));
+		System.out.println(node4.isNodeAncestor(node1));
 		
 		System.out.println(TreeString.toString(node1));
 		System.out.println(TreeString.toString(node2));
 		
-		System.out.println(node2.isNodeChild(node2));
+		System.out.println(node1.isNodeChild(node4));
 	}
 }
