@@ -76,7 +76,7 @@ public class MeasureActivity extends EvalFunc<DataBag>{
 				if ( rspCT != null && reqRef != null && !rspCT.contains("text"))
 					activityAddress = reqRef;
 			}
-			if ( itrr == true){
+			if ( itrr != null && itrr == true){
 				activityLabel = "itrr";
 			} else {
 				activityLabel = label;
@@ -92,7 +92,9 @@ public class MeasureActivity extends EvalFunc<DataBag>{
 				rspend = rspTime+rspDur;
 			if ( activityEnd < rspend)
 				activityEnd = rspend;
-			long tsize = reqPl+rspPl;
+			long tsize = 0;
+			if (reqPl != null && rspPl !=  null )
+				tsize = reqPl + rspPl;
 			activitySize += tsize;
 			if ( srcRttAvg != null )
 				this.flowSrcLat.add(srcRttAvg);
