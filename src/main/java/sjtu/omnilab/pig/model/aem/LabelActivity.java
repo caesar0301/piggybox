@@ -82,8 +82,17 @@ public class LabelActivity extends AccumulatorEvalFunc<DataBag>{
 				activities.add(newAct);
 			}
 		}
+	}
+
+	@Override
+	public void cleanup() {
+		this.outputBag = BagFactory.getInstance().newDefaultBag();
+		this.activities = new LinkedList<ActHelper>();
+	}
+
+	@Override
+	public DataBag getValue() {
 		System.out.println("***********"+activities.size());
-		
 		for ( int i = 0; i < activities.size(); i++){
 			String lab = "forward";
 			if ( i == 0){
@@ -108,16 +117,6 @@ public class LabelActivity extends AccumulatorEvalFunc<DataBag>{
 			this.outputBag.add(newT);
 			reporter.progress();
 		}
-	}
-
-	@Override
-	public void cleanup() {
-		this.outputBag = BagFactory.getInstance().newDefaultBag();
-		this.activities = new LinkedList<ActHelper>();
-	}
-
-	@Override
-	public DataBag getValue() {
 		return outputBag;
 	}
 
