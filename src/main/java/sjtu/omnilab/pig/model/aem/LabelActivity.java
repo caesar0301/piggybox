@@ -1,10 +1,12 @@
 package sjtu.omnilab.pig.model.aem;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
-import org.apache.pig.AccumulatorEvalFunc;
+import org.apache.pig.EvalFunc;
 import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.DataType;
@@ -14,31 +16,22 @@ import org.apache.pig.impl.logicalLayer.FrontendException;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 class ActHelper {
-	String userAgent;
 	String aid;
-	List<String> urls;
-	List<String> methods;
-	List<String> codes;
+	List<String> urls;	
 	
-	
-	public ActHelper(String ua, String aid){
-		this.userAgent= ua;
+	public ActHelper(String aid, String url){
 		this.aid = aid;
 		this.urls = new LinkedList<String>();
-		this.methods = new LinkedList<String>();
-		this.codes = new LinkedList<String>();
+		this.urls.add(url);
 	}
 	
-	public void addRequst(String url, String method, String code){
+	public void addRequst(String url){
 		this.urls.add(url);
-		this.methods.add(method);
-		this.codes.add(code);
 	}
 	
 	public boolean isEqual(ActHelper a){
-		if ( (this.userAgent == a.userAgent) || (this.userAgent!=null && a.userAgent!=null && this.userAgent.equals(a.userAgent)))
-			if ( this.urls.get(0).equals(a.urls.get(0)))
-				return true;
+		if ( this.urls.get(0).equals(a.urls.get(0)))
+			return true;
 		return false;
 	}
 	
@@ -52,37 +45,51 @@ class ActHelper {
  * @author chenxm
  *
  */
-public class LabelActivity extends AccumulatorEvalFunc<DataBag>{
-	private DataBag outputBag = null;
-	private List<ActHelper> activities = null;
+public class LabelActivity extends EvalFunc<DataBag>{
+	private DataBag outputBag;
+	private Set<String> aidSet;
+	private List<ActHelper> activities;
 	
 	public LabelActivity(){
-		cleanup();
+		init();
 	}
-
+	
+	public void init() {
+		this.outputBag = BagFactory.getInstance().newDefaultBag();
+		this.activities = new LinkedList<ActHelper>();
+		this.aidSet = new HashSet<String>();
+	}
+	
 	@Override
-	public void accumulate(Tuple b) throws IOException {
+	public DataBag exec(Tuple b) throws IOException {
+		init();
 		for ( Tuple t : (DataBag) b.get(0) ){
-			boolean added = false;
-			String ua = (String) t.get(0);
 			String url = (String) t.get(1);
-			String method = (String) t.get(2);
-			String code = (String) t.get(3);
-			String aid = (String) t.get(4);
-			if ( activities.size() > 0){
-				ActHelper lastAct = activities.get(activities.size()-1);
-				if ( aid.equals(lastAct.aid)){
-					lastAct.addRequst(url, method, code);
-					added = true;
-				}
-			}
-			if ( ! added ){
-				ActHelper newAct = new ActHelper(ua, aid);
-				newAct.addRequst(url, method, code);
-				activities.add(newAct);
-			}
+			String aid = (String) t.get(2);
+			addHttpEntity(aid, url);
 		}
 		System.out.println("***********"+activities.size());
+		labelAct();
+		return this.outputBag;
+	}
+	
+	private void addHttpEntity(String aid, String url){
+		this.aidSet.add(aid);
+		boolean flag = false;
+		for ( ActHelper act : this.activities ){
+			if ( aid.equals(act.aid) ){
+				act.addRequst(url);
+				flag = true;
+				break;
+			}
+		}
+		if ( !flag ){
+			ActHelper newAct = new ActHelper(aid, url);
+			this.activities.add(newAct);
+		}
+	}
+	
+	private void labelAct(){
 		for ( int i = 0; i < activities.size(); i++){
 			String lab = "forward";
 			if ( i == 0){
@@ -102,22 +109,10 @@ public class LabelActivity extends AccumulatorEvalFunc<DataBag>{
 			newT.append(activities.get(i).aid);
 			newT.append(lab);
 			newT.append(activities.get(i).size());		// for debugging
-			newT.append(activities.get(i).codes.get(0)); // for debugging
 			newT.append(activities.get(i).urls.get(0)); // for debugging
 			this.outputBag.add(newT);
 			reporter.progress();
 		}
-	}
-
-	@Override
-	public void cleanup() {
-		this.outputBag = BagFactory.getInstance().newDefaultBag();
-		this.activities = new LinkedList<ActHelper>();
-	}
-
-	@Override
-	public DataBag getValue() {
-		return outputBag;
 	}
 
 	/**
@@ -137,7 +132,7 @@ public class LabelActivity extends AccumulatorEvalFunc<DataBag>{
 	                                             DataType.findTypeName(inputBagSchema.getField(0).type)));
 			}
 			Schema inputTupleSchema = inputBagSchema.getField(0).schema;
-			if (inputTupleSchema.getField(0).type != DataType.CHARARRAY){
+			if (inputTupleSchema.getField(0).type != DataType.DOUBLE){
 				throw new RuntimeException(String.format("Expected first element of tuple to be a CHARARRAY, but instead found %s",
 	                                             DataType.findTypeName(inputTupleSchema.getField(0).type)));
 			}
@@ -146,14 +141,6 @@ public class LabelActivity extends AccumulatorEvalFunc<DataBag>{
 	                                             DataType.findTypeName(inputTupleSchema.getField(0).type)));
 			}
 			if (inputTupleSchema.getField(2).type != DataType.CHARARRAY){
-				throw new RuntimeException(String.format("Expected first element of tuple to be a CHARARRAY, but instead found %s",
-	                                             DataType.findTypeName(inputTupleSchema.getField(0).type)));
-			}
-			if (inputTupleSchema.getField(3).type != DataType.CHARARRAY){
-				throw new RuntimeException(String.format("Expected first element of tuple to be a CHARARRAY, but instead found %s",
-	                                             DataType.findTypeName(inputTupleSchema.getField(0).type)));
-			}
-			if (inputTupleSchema.getField(4).type != DataType.CHARARRAY){
 				throw new RuntimeException(String.format("Expected first element of tuple to be a CHARARRAY, but instead found %s",
 	                                             DataType.findTypeName(inputTupleSchema.getField(0).type)));
 			}
