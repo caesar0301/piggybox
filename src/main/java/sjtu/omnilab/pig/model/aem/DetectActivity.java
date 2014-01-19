@@ -38,6 +38,7 @@ public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
 	private double readingTime;
 	private AEM aemModel = null;
 	private DataBag outputBag = null;
+	private int i = 0;
 	
 	public DetectActivity(){
 		this("2s");
@@ -51,7 +52,9 @@ public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
 	
 	@Override
 	public void accumulate(Tuple b) throws ExecException {
+		cleanup();
 		for ( Tuple t : (DataBag) b.get(0) ){
+			i++;
 			Entity newEntity = new Entity(t);
 			boolean okToDump = false;
 			okToDump = aemModel.addEntityToModel(newEntity);
@@ -59,7 +62,7 @@ public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
 			if (okToDump && actCnt > 0){
 				dumpActivitiesToBag(0, actCnt-1); // leave the latest added.
 			}
-			reporter.progress();
+			reporter.progress("DetectActivity is running: " + i + "th logs");
 		}
 	}
 
@@ -67,6 +70,7 @@ public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
 	public void cleanup() {
 		this.outputBag = BagFactory.getInstance().newDefaultBag();
 		this.aemModel = new AEM(readingTime); // set to 2.5s
+		this.i = 0;
 	}
 
 	@Override
@@ -176,8 +180,8 @@ class AEM{
 	private static final double SRAL_TDIFF1 = 0;	//# sec, ts2-te1 > 0
 	private static final double SRAL_TDIFF2 = 10;	//# sec, ts2-te1 <= 10
 	private static final double PRLL_OL = 0;		//# sec, overlap
-	private static final double PAGE_FAT = 4;		//# Number of embedded entities of fat page
-	private static final double PAGE_SLIM = 1;		//# Number of embedded entities of slim page
+	private static final double PAGE_FAT = 5;		//# Number of embedded entities of fat page
+	private static final double PAGE_SLIM = 2;		//# Number of embedded entities of slim page
 	private static final double READING_TIME_DEFAULT = 2;	//# sec, user reading time
 	private static double READING_TIME;
 	
@@ -207,6 +211,10 @@ class AEM{
 		boolean linked2activity = false;
 		boolean dumpModelToBag = false; // indicate if the intermediate data is available to dump.
 		
+//		boolean debug=false;
+//		if ( e.url.contains("/alimama.php?i=mm_15890324_3509534_11501995&w=186&h=275&re=1920x1080&cah=1040&caw=1920&ccd=24&c"))
+//			debug = true;
+		
 		if ( lastEntity == null ) createNew = true;
 		else{
 			e.aemLastType = classify(lastEntity, e);
@@ -228,12 +236,16 @@ class AEM{
 							int pch = refEntity.getChildNum(); // child number
 							boolean isPageBase = refEntity.isWebPageBase(); // if it is a web page base
 							boolean isRoot = (act.hasRoot(refEntity) || refEntity.hasFakeReferrer); //
-							if (!isRoot && e.aemLastType==TYPE_SRAL && isPageBase && pch>=PAGE_SLIM)
+							
+							if (!isRoot && isPageBase && pch > PAGE_FAT ){
 								cutEntities.add(refEntity);
-							if (!isRoot && isPageBase && pch >= PAGE_FAT )
+							}
+							if (!isRoot && e.aemLastType==TYPE_SRAL && isPageBase && pch>PAGE_SLIM){ // removed bug
 								cutEntities.add(refEntity);
-							if (!isRoot && e.aemPredType==TYPE_UNCL && isPageBase && pch>=PAGE_SLIM)
+							}
+							if (!isRoot && e.aemPredType==TYPE_UNCL && isPageBase && pch>PAGE_SLIM){
 								cutEntities.add(refEntity);
+							}
 							break; // stop for next entity
 						}
 					}
@@ -254,9 +266,12 @@ class AEM{
 						}
 					}
 				} else { //without referrer
-					if ( e.aemLastType == this.TYPE_SRAL && Math.abs(lastEntity.overlap(e))>= this.READING_TIME)
-						createNew = true;
-					else{ // create a fake link to the preceding
+					String sdm1 = getTopPrivateDomain(lastEntity.url);
+					String sdm2 = getTopPrivateDomain(e.url);
+					
+					if ( e.aemLastType != this.TYPE_SRAL || (Math.abs(lastEntity.overlap(e)) < this.READING_TIME &&
+							sdm1 != null && sdm2!=null && sdm1.equals(sdm2))) {
+						// create a fake link to the preceding
 						for ( int i = activities.size()-1; i >= 0; i--){ // reversed order
 							Activity act = activities.get(i);
 							if ( act.contains(lastEntity)){
@@ -268,6 +283,8 @@ class AEM{
 								break;
 							}
 						}
+					}else {
+						createNew = true;
 					}
 				}
 			}

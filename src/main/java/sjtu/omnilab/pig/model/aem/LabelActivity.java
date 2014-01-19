@@ -1,10 +1,10 @@
 package sjtu.omnilab.pig.model.aem;
 
 import java.io.IOException;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.BagFactory;
@@ -38,6 +38,15 @@ class ActHelper {
 	public int size(){
 		return this.urls.size();
 	}
+	
+	public String assembleUrls(){
+		String res = "";
+		for (String url : this.urls){
+			res += url;
+			res += ";";
+		}
+		return res;
+	}
 }
 
 /**
@@ -47,8 +56,9 @@ class ActHelper {
  */
 public class LabelActivity extends EvalFunc<DataBag>{
 	private DataBag outputBag;
-	private Set<String> aidSet;
+	private Map<String, Integer> aidIndexMap;
 	private List<ActHelper> activities;
+	private long total = 0;
 	
 	public LabelActivity(){
 		init();
@@ -57,45 +67,50 @@ public class LabelActivity extends EvalFunc<DataBag>{
 	public void init() {
 		this.outputBag = BagFactory.getInstance().newDefaultBag();
 		this.activities = new LinkedList<ActHelper>();
-		this.aidSet = new HashSet<String>();
+		this.aidIndexMap = new HashMap<String, Integer>();
+		this.total = 0;
 	}
 	
 	@Override
 	public DataBag exec(Tuple b) throws IOException {
 		init();
 		for ( Tuple t : (DataBag) b.get(0) ){
+			this.total += 1;
 			String url = (String) t.get(1);
 			String aid = (String) t.get(2);
 			addHttpEntity(aid, url);
+			int size = this.activities.size();
+			int left = 300;
+			if ( size >= 2000 ){
+				labelAct(left);
+				this.activities.subList(0, size-left).clear();
+				updateIndexMap();
+			}
 		}
-		System.out.println("***********"+activities.size());
-		labelAct();
+		labelAct(0);
+		System.out.println("***********"+total);
 		return this.outputBag;
 	}
 	
 	private void addHttpEntity(String aid, String url){
-		this.aidSet.add(aid);
-		boolean flag = false;
-		for ( ActHelper act : this.activities ){
-			if ( aid.equals(act.aid) ){
-				act.addRequst(url);
-				flag = true;
-				break;
-			}
-		}
-		if ( !flag ){
+		if ( this.aidIndexMap.containsKey(aid) ){
+			int index = this.aidIndexMap.get(aid);
+			ActHelper act = activities.get(index);
+			act.addRequst(url);
+		} else {
 			ActHelper newAct = new ActHelper(aid, url);
+			this.aidIndexMap.put(aid, this.activities.size());
 			this.activities.add(newAct);
 		}
 	}
 	
-	private void labelAct(){
-		for ( int i = 0; i < activities.size(); i++){
+	private void labelAct(int left){
+		for ( int i = 0; i < activities.size()-left; i++){
 			String lab = "forward";
 			if ( i == 0){
 				lab = "start";
 			} else if ( i > 0 ){
-				for ( int j = i-1; j >= 0; j--){
+				for ( int j = i-1; j >= 0 && j >= i-200; j--){ // past 200 activities
 					if ( activities.get(i).isEqual(activities.get(j)) ){
 						if ( i - j == 1 )
 							lab = "refresh";
@@ -108,10 +123,18 @@ public class LabelActivity extends EvalFunc<DataBag>{
 			Tuple newT = TupleFactory.getInstance().newTuple();
 			newT.append(activities.get(i).aid);
 			newT.append(lab);
-			newT.append(activities.get(i).size());		// for debugging
-			newT.append(activities.get(i).urls.get(0)); // for debugging
+//			newT.append(activities.get(i).size());		// for debugging
+//			newT.append(activities.get(i).assembleUrls()); // for debugging
 			this.outputBag.add(newT);
-			reporter.progress();
+			reporter.progress("LabelActivity is running: " + i + "th activity.");
+		}
+	}
+	
+	private void updateIndexMap(){
+		this.aidIndexMap.clear();
+		for( int index =0; index < this.activities.size(); index++){
+			String aid = this.activities.get(index).aid;
+			this.aidIndexMap.put(aid, index);
 		}
 	}
 

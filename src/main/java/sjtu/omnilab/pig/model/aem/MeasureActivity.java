@@ -43,6 +43,23 @@ public class MeasureActivity extends EvalFunc<DataBag>{
 		this.init();
 	}
 	
+	public void init() {
+		this.outputBag = BagFactory.getInstance().newDefaultBag();
+		this.flowSrcLat = new LinkedList<Double>();
+		this.flowDstLat = new LinkedList<Double>();
+		this.flowSrcJitter = new LinkedList<Double>();
+		this.flowDstJitter = new LinkedList<Double>();
+		this.entityDataRates = new LinkedList<Double>();
+		this.hostSet = new HashSet<String>();
+		this.activityAddress = null;
+		this.activityLabel = null;
+		this.apName = null;
+		this.activityStart=-1;
+		this.activityEnd=-1;
+		this.activitySize=0;
+		this.activityVol=0;
+	}
+	
 	@Override
 	public DataBag exec(Tuple b) throws IOException {
 		init();
@@ -60,7 +77,6 @@ public class MeasureActivity extends EvalFunc<DataBag>{
 			Long rspPl = (Long) t.get(37);
 			String reqUrl = (String) t.get(39);
 			String reqHost = (String) t.get(41);
-			String reqUa = (String) t.get(42);
 			String reqRef = (String) t.get(43);
 			String rspCT = (String) t.get(46);
 			Boolean itrr = (Boolean) t.get(50);
@@ -112,23 +128,6 @@ public class MeasureActivity extends EvalFunc<DataBag>{
 		return assembleResult();
 	}
 
-	public void init() {
-		this.outputBag = BagFactory.getInstance().newDefaultBag();
-		this.flowSrcLat = new LinkedList<Double>();
-		this.flowDstLat = new LinkedList<Double>();
-		this.flowSrcJitter = new LinkedList<Double>();
-		this.flowDstJitter = new LinkedList<Double>();
-		this.entityDataRates = new LinkedList<Double>();
-		this.hostSet = new HashSet<String>();
-		this.activityAddress = null;
-		this.activityLabel = null;
-		this.apName = null;
-		this.activityStart=-1;
-		this.activityEnd=-1;
-		this.activitySize=0;
-		this.activityVol=0;
-	}
-
 	public DataBag assembleResult() {
 		Tuple newT = TupleFactory.getInstance().newTuple();
 		newT.append(activityStart); //start time
@@ -164,7 +163,7 @@ public class MeasureActivity extends EvalFunc<DataBag>{
 	}
 	
 	private boolean hasProtoPrefix(String uri){
-		if ( uri.matches("^(\\w+:?//).*")){
+		if ( uri != null && uri.matches("^(\\w+:?//).*")){
 			return true;
 		}
 		return false;
