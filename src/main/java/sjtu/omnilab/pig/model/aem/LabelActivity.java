@@ -78,6 +78,8 @@ public class LabelActivity extends EvalFunc<DataBag>{
 			this.total += 1;
 			String url = (String) t.get(1);
 			String aid = (String) t.get(2);
+			if ( url == null || aid == null)
+				continue;
 			addHttpEntity(aid, url);
 			int size = this.activities.size();
 			int left = 300;

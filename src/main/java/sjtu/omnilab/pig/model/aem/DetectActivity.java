@@ -38,7 +38,6 @@ public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
 	private double readingTime;
 	private AEM aemModel = null;
 	private DataBag outputBag = null;
-	private int i = 0;
 	
 	public DetectActivity(){
 		this("2s");
@@ -54,7 +53,6 @@ public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
 	public void accumulate(Tuple b) throws ExecException {
 		cleanup();
 		for ( Tuple t : (DataBag) b.get(0) ){
-			i++;
 			Entity newEntity = new Entity(t);
 			boolean okToDump = false;
 			okToDump = aemModel.addEntityToModel(newEntity);
@@ -62,7 +60,7 @@ public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
 			if (okToDump && actCnt > 0){
 				dumpActivitiesToBag(0, actCnt-1); // leave the latest added.
 			}
-			reporter.progress("DetectActivity is running: " + i + "th logs");
+			this.reporter.progress();
 		}
 	}
 
@@ -70,7 +68,6 @@ public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
 	public void cleanup() {
 		this.outputBag = BagFactory.getInstance().newDefaultBag();
 		this.aemModel = new AEM(readingTime); // set to 2.5s
-		this.i = 0;
 	}
 
 	@Override
