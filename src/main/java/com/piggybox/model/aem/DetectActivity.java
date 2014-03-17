@@ -245,20 +245,21 @@ class AEM{
 							break;
 						}
 					}
-					this.udfLog.warn("removed: "+removedEntity);
 					// Remove cutEntities as new activities
-//					if ( removedEntity != null ) {
-//						for ( int j = activities.size()-1; j >= 0; j--){ // reversed order
-//							Activity a = activities.get(j);
-//							if ( a.contains(removedEntity)){
-//								this.udfLog.warn("Parent activity found.");
-//								a.removeEntity(removedEntity);
-//								Activity newA = new Activity(removedEntity);
-//								AEM.activities.add(newA);
-//								break;
-//							}
-//						}
-//					}
+					if ( removedEntity != null ) {
+						List<Activity> newActs = new LinkedList<Activity>();
+						for ( int j = activities.size()-1; j >= 0; j--){ // reversed order
+							Activity a = activities.get(j);
+							if ( a.contains(removedEntity)){
+								this.udfLog.warn("Parent activity found.");
+								a.removeEntity(removedEntity);
+								Activity newA = new Activity(removedEntity);
+								newActs.add(newA);
+								break;
+							}
+						}
+						activities.addAll(newActs);
+					}
 				} else { //without referrer
 					String sdm1 = getTopPrivateDomain(lastEntity.url);
 					String sdm2 = getTopPrivateDomain(e.url);
@@ -442,14 +443,7 @@ class Activity {
 	 * @return
 	 */
 	public int size(){
-		int number = 0;
-		if ( root != null ){
-			Iterator<TreeNode> itr = root.depthFirstIterator();
-			while( itr.hasNext() ){
-				number++;
-			}
-		}
-		return number;
+		return this.root.breadthFirstList().size();
 	}
 	
 	/**
@@ -496,12 +490,13 @@ class Activity {
 	 * @throws Exception
 	 */
 	public void removeEntity(Entity entity) throws ExecException{
-		if ( root !=  null && ! this.root.equals(entity.getTreeNode())){
-			Iterator<TreeNode> treeWalker = this.root.depthFirstIterator();
-			if ( treeWalker.hasNext() ){
+		if ( root !=  null && ! root.equals(entity.getTreeNode())){
+			Iterator<TreeNode> treeWalker = root.preorderIterator();
+			while ( treeWalker.hasNext() ){
 				TreeNode next = treeWalker.next();
 				if ( next.isNodeChild(entity.getTreeNode())){
 					next.remove(entity.getTreeNode());
+					break;
 				}
 			}
 		}
