@@ -11,6 +11,7 @@ import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.logging.Log;
 import org.apache.pig.AccumulatorEvalFunc;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.BagFactory;
@@ -37,6 +38,7 @@ public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
 	private double readingTime;
 	private AEM aemModel = null;
 	private DataBag outputBag = null;
+	public Log myLogger = this.getLogger();
 	
 	public DetectActivity(){
 		this("2s");
@@ -57,16 +59,16 @@ public class DetectActivity extends AccumulatorEvalFunc<DataBag>{
 			okToDump = aemModel.addEntityToModel(newEntity);
 			int actCnt = aemModel.size();
 			if (okToDump && actCnt > 0){
-				dumpActivitiesToBag(0, actCnt-1); // leave the latest added.
+				dumpActivitiesToBag(0, actCnt-1); // leave the last activity to add new entities.
 			}
-			this.reporter.progress();
+			//this.reporter.progress(); // Disable to pass mvn test
 		}
 	}
 
 	@Override
 	public void cleanup() {
 		this.outputBag = BagFactory.getInstance().newDefaultBag();
-		this.aemModel = new AEM(readingTime); // set to 2.5s
+		this.aemModel = new AEM(readingTime, this.myLogger); // set to 2.5s
 	}
 
 	@Override
@@ -174,7 +176,7 @@ class AEM{
 	private static final double RLYD_TDIFF1 = 0;	//# ts2-te1 >= 0
 	private static final double RLYD_TDIFF2 = 1;	//# sec, ts2-te1 < 0.1
 	private static final double SRAL_TDIFF1 = 0;	//# sec, ts2-te1 > 0
-	private static final double SRAL_TDIFF2 = 10;	//# sec, ts2-te1 <= 10
+	private static final double SRAL_TDIFF2 = 8;	//# sec, ts2-te1 <= 10
 	private static final double PRLL_OL = 0;		//# sec, overlap
 	private static final double PAGE_FAT = 5;		//# Number of embedded entities of fat page
 	private static final double PAGE_SLIM = 2;		//# Number of embedded entities of slim page
@@ -183,17 +185,19 @@ class AEM{
 	
 	private static List<Activity> activities = new LinkedList<Activity>();
 	private static Entity lastEntity = null;
+	private Log udfLog = null;
 	
 	public AEM(){
-		this(READING_TIME_DEFAULT);
+		this(READING_TIME_DEFAULT, null);
 	}
 	
-	public AEM(double readingTime){
-		this.READING_TIME = readingTime;
+	public AEM(double readingTime, Log udfLog){
+		AEM.READING_TIME = readingTime;
+		this.udfLog = udfLog;
 	}
 	
 	public int size(){
-		return this.activities.size();
+		return AEM.activities.size();
 	}
 	
 	/**
@@ -205,22 +209,18 @@ class AEM{
 	public boolean addEntityToModel(Entity e) throws ExecException{
 		boolean createNew = false;
 		boolean linked2activity = false;
-		boolean dumpModelToBag = false; // indicate if the intermediate data is available to dump.
-		
-//		boolean debug=false;
-//		if ( e.url.contains("/alimama.php?i=mm_15890324_3509534_11501995&w=186&h=275&re=1920x1080&cah=1040&caw=1920&ccd=24&c"))
-//			debug = true;
+		boolean dumpModelToBag = false; // indicate if the intermediate data are available to dump.
 		
 		if ( lastEntity == null ) createNew = true;
 		else{
 			e.aemLastType = classify(lastEntity, e);
-			if (e.aemLastType == this.TYPE_UNCL){ // 10s is involved to separate different activities forcedly.
+			if (e.aemLastType == AEM.TYPE_UNCL){ // 10s is involved to separate different activities forcedly.
 				createNew = true;
 				dumpModelToBag = true;
 			}else{
 				if ( e.referrer != null ){ // with referrer
-					Set<Entity> cutEntities = new HashSet<Entity>();
 					Activity act = null;
+					Entity removedEntity = null;
 					for ( int i = activities.size()-1; i >= 0; i--){ // reversed order
 						act = activities.get(i);
 						Entity refEntity = act.findReferrerEntity(e);
@@ -229,43 +229,40 @@ class AEM{
 							e.aemPredType = classify(refEntity, e);
 							act.addEntity(e, refEntity);
 							linked2activity = true;
+							// Check if cut the activity
 							int pch = refEntity.getChildNum(); // child number
 							boolean isPageBase = refEntity.isWebPageBase(); // if it is a web page base
-							boolean isRoot = (act.hasRoot(refEntity) || refEntity.hasFakeReferrer); //
-							
-							if (!isRoot && isPageBase && pch > PAGE_FAT ){
-								cutEntities.add(refEntity);
+							boolean isRefRoot = (act.hasRoot(refEntity) || refEntity.hasFakeReferrer);
+							if (!isRefRoot && isPageBase && pch > PAGE_FAT ){
+								removedEntity = refEntity;
 							}
-							if (!isRoot && e.aemLastType==TYPE_SRAL && isPageBase && pch>PAGE_SLIM){ // removed bug
-								cutEntities.add(refEntity);
+							if (!isRefRoot && e.aemLastType==TYPE_SRAL && isPageBase && pch>PAGE_SLIM){ // removed bug
+								removedEntity = refEntity;
 							}
-							if (!isRoot && e.aemPredType==TYPE_UNCL && isPageBase && pch>PAGE_SLIM){
-								cutEntities.add(refEntity);
+							if (!isRefRoot && e.aemPredType==TYPE_UNCL && isPageBase && pch>PAGE_SLIM){
+								removedEntity = refEntity;
 							}
-							break; // stop for next entity
+							break;
 						}
 					}
+					this.udfLog.warn("removed: "+removedEntity);
 					// Remove cutEntities as new activities
-					for ( Entity ce : cutEntities){
-						Activity newA = null;
-						for ( int j = activities.size()-1; j >= 0; j--){ // reversed order
-							Activity a = activities.get(j);
-							try {
-								newA = new Activity(a.removeEntity(ce));
-								break;
-							} catch (Exception e2) {
-								continue;
-							}
-						}
-						if ( newA != null ){
-							this.activities.add(newA);
-						}
-					}
+//					if ( removedEntity != null ) {
+//						for ( int j = activities.size()-1; j >= 0; j--){ // reversed order
+//							Activity a = activities.get(j);
+//							if ( a.contains(removedEntity)){
+//								this.udfLog.warn("Parent activity found.");
+//								a.removeEntity(removedEntity);
+//								Activity newA = new Activity(removedEntity);
+//								AEM.activities.add(newA);
+//								break;
+//							}
+//						}
+//					}
 				} else { //without referrer
 					String sdm1 = getTopPrivateDomain(lastEntity.url);
 					String sdm2 = getTopPrivateDomain(e.url);
-					
-					if ( e.aemLastType != this.TYPE_SRAL || (Math.abs(lastEntity.overlap(e)) < this.READING_TIME &&
+					if ( e.aemLastType != AEM.TYPE_SRAL || (Math.abs(lastEntity.overlap(e)) < AEM.READING_TIME &&
 							sdm1 != null && sdm2!=null && sdm1.equals(sdm2))) {
 						// create a fake link to the preceding
 						for ( int i = activities.size()-1; i >= 0; i--){ // reversed order
@@ -279,7 +276,7 @@ class AEM{
 								break;
 							}
 						}
-					}else {
+					} else {
 						createNew = true;
 					}
 				}
@@ -295,7 +292,7 @@ class AEM{
 				newActivity.addEntity(e, dummyEntity);
 			} else
 				newActivity.addEntity(e, null);
-			this.activities.add(newActivity);
+			AEM.activities.add(newActivity);
 		}
 		lastEntity = e;
 		return dumpModelToBag;
@@ -306,14 +303,14 @@ class AEM{
 	 * @return
 	 */
 	public List<Activity> getActivities(int startIndex, int endIndex){
-		return this.activities.subList(startIndex, endIndex);
+		return AEM.activities.subList(startIndex, endIndex);
 	}
 	
 	/**
 	 * Remove activities from startIndex to endIndex at appended order.
 	 */
 	public void removeActivities(int startIndex, int endIndex){
-		this.activities.subList(startIndex, endIndex).clear();
+		AEM.activities.subList(startIndex, endIndex).clear();
 	}
 	
 	/**
@@ -343,7 +340,7 @@ class AEM{
 	 */
 	private boolean isRelayed(Entity e1, Entity e2){
 		double ol = e1.overlap(e1);
-		if ( ol <= 0 && Math.abs(ol) >= this.RLYD_TDIFF1 && Math.abs(ol) < this.RLYD_TDIFF2 )
+		if ( ol <= 0 && Math.abs(ol) >= AEM.RLYD_TDIFF1 && Math.abs(ol) < AEM.RLYD_TDIFF2 )
 			return true;
 		return false;
 	}
@@ -356,7 +353,7 @@ class AEM{
 	 */
 	private boolean isSerial(Entity e1, Entity e2){
 		double ol = e1.overlap(e2);
-		if ( ol <= 0 && Math.abs(ol) >= this.SRAL_TDIFF1 && Math.abs(ol) <= this.SRAL_TDIFF2)
+		if ( ol <= 0 && Math.abs(ol) >= AEM.SRAL_TDIFF1 && Math.abs(ol) <= AEM.SRAL_TDIFF2)
 			return true;
 		return false;
 	}
@@ -375,7 +372,7 @@ class AEM{
 		// Get top private domains
 		String sdm1 = getTopPrivateDomain(e1.url);
 		String sdm2 = getTopPrivateDomain(e2.url);
-		if ( hd <= this.CONJ_ST_DIFF && td/Math.min(d1, d2) < this.CONF_ET_PCRT &&
+		if ( hd <= AEM.CONJ_ST_DIFF && td/Math.min(d1, d2) < AEM.CONF_ET_PCRT &&
 				sdm1 != null && sdm2 != null && sdm1.equals(sdm2))
 			return true;
 		return false;
@@ -408,7 +405,7 @@ class AEM{
 	 */
 	private boolean isParallel(Entity e1, Entity e2){
 		double ol = e1.overlap(e2);
-		if ( ol > this.PRLL_OL ) 
+		if ( ol > AEM.PRLL_OL ) 
 			return true;
 		return false;
 	}
@@ -419,7 +416,7 @@ class AEM{
  * @author chenxm
  */
 class Activity {
-	// One activity, one tree representation
+	// One activity, one tree.
 	private TreeNode root = null; // 
 	// A unique ID of this activity in the space of all activities.
 	private UUID ID;
@@ -441,6 +438,21 @@ class Activity {
 	}
 	
 	/**
+	 * Get the number of all entities in this activity.
+	 * @return
+	 */
+	public int size(){
+		int number = 0;
+		if ( root != null ){
+			Iterator<TreeNode> itr = root.depthFirstIterator();
+			while( itr.hasNext() ){
+				number++;
+			}
+		}
+		return number;
+	}
+	
+	/**
 	 * Add an entity to this activity.
 	 * The entity is identified by AEM being owned by the activity.
 	 * @param entity
@@ -451,7 +463,7 @@ class Activity {
 		if ( root == null && referrer != null )
 			throw new ExecException("Parameter invalid: This activity is empty."); 
 		if( root != null && referrer == null )
-			throw new ExecException("An activity can have two root entity.");
+			throw new ExecException("An activity can not have two root entity.");
 		if ( root == null && referrer == null )
 			// add entity and treat it as the root
 			this.root = entity.getTreeNode();
@@ -480,14 +492,19 @@ class Activity {
 	 * At inner data structure, other entities linked to given entity are removed from this activity too.
 	 * @param entity
 	 * @return The removed entity (with linked other entities).
+	 * @throws ExecException 
 	 * @throws Exception
 	 */
-	public Entity removeEntity(Entity entity){
-		if ( root != null ){
-			this.root.remove(entity.getTreeNode());
-			return entity;
+	public void removeEntity(Entity entity) throws ExecException{
+		if ( root !=  null && ! this.root.equals(entity.getTreeNode())){
+			Iterator<TreeNode> treeWalker = this.root.depthFirstIterator();
+			if ( treeWalker.hasNext() ){
+				TreeNode next = treeWalker.next();
+				if ( next.isNodeChild(entity.getTreeNode())){
+					next.remove(entity.getTreeNode());
+				}
+			}
 		}
-		return null;
 	}
 	
 	/**
