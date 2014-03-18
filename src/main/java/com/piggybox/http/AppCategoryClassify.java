@@ -40,12 +40,21 @@ public class AppCategoryClassify extends SimpleEvalFunc<String> {
 		regexMap.put("ads", Pattern.compile("mobfox"));
 		regexMap.put("compatable", Pattern.compile("\\b(mozilla|dalvik)/\\d|Apache-HttpClient"));
 	}
+	// Cache to store matched user agents.
+	private Map<String, String> regexCache = new HashMap<String, String>();
 	
 	public String call(String useragent) {
-		for (String category : regexMap.keySet() ){
-			Matcher matcher = regexMap.get(category).matcher(useragent);
-			if ( matcher.find()){
-				return category;
+		if ( useragent != null && useragent.length() > 0){
+			// Use cache first.
+			if ( regexCache.containsKey(useragent))
+				return regexCache.get(useragent);
+			// Regex matching
+			for (String category : regexMap.keySet() ){
+				Matcher matcher = regexMap.get(category).matcher(useragent);
+				if ( matcher.find()){
+					regexCache.put(useragent, category);
+					return category;
+				}
 			}
 		}
 		return "unknown";

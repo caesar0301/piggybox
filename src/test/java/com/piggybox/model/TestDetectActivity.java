@@ -1,12 +1,10 @@
 package com.piggybox.model;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.Assert;
 
-import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
@@ -14,6 +12,7 @@ import org.apache.pig.data.TupleFactory;
 import org.junit.Test;
 
 import com.piggybox.model.aem.DetectActivity;
+import com.piggybox.utils.PigUtils;
 
 public class TestDetectActivity {
 	private TupleFactory tupleFactory = TupleFactory.getInstance();
@@ -24,7 +23,7 @@ public class TestDetectActivity {
 		Tuple input = tupleFactory.newTuple();
 		input.append(prepareBag());
 		DetectActivity func = new DetectActivity();
-		List<Tuple> result = toList(func.exec(input));
+		List<Tuple> result = PigUtils.databagToList(func.exec(input));
 		Assert.assertEquals(6, result.size());
 	}
 	
@@ -44,15 +43,6 @@ public class TestDetectActivity {
 		dataBag.add(t6);
 		return dataBag;
 	}
-	
-	private List<Tuple> toList(DataBag bag) throws ExecException{
-		List<Tuple> result = new ArrayList<Tuple>();
-		for (Tuple t : bag)
-		{
-			result.add(t);
-		}
-		return result;
-	  }
 	
 	private Tuple prepareTuple(Double start, Double end, String url, String referrer, String type, String id){
 		Tuple tuple = tupleFactory.newTuple();

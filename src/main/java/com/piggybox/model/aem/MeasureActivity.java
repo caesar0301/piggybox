@@ -7,16 +7,12 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.logging.Log;
 import org.apache.pig.EvalFunc;
 import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
-
-class pair{
-	public double start;
-	public double end;
-}
 
 /**
  * Generate measures related to performance for each activity.
@@ -25,46 +21,62 @@ class pair{
  */
 public class MeasureActivity extends EvalFunc<DataBag>{
 	private DataBag outputBag; // output result
-	private String activityAddress; // URL of this activity
-	private String activityLabel; // refresh,stop,backward,...
-	private String apName; // user location during this activity
-	private double activityStart = -1; // activity start time
-	private double activityEnd = -1;
+	private String activityAddress = null; // URL of this activity
+	private String activityLabel = null; // refresh,stop,backward,...
+	private String apName = null; // user location during this activity
+	private Double activityStart = null; // activity start time
+	private Double activityEnd = null;
 	private long activitySize = 0;
 	private long activityVol = 0; // number of entities
-	private List<Double> flowSrcLat; // latencies
-	private List<Double> flowDstLat;
-	private List<Double> flowSrcJitter; // jitter
-	private List<Double> flowDstJitter;
-	private List<Double> entityDataRates; // data rates
-	private Set<String> hostSet;
+	private List<Double> flowSrcLat = new LinkedList<Double>(); // latencies
+	private List<Double> flowDstLat = new LinkedList<Double>();
+	private List<Double> flowSrcJitter = new LinkedList<Double>(); // jitter
+	private List<Double> flowDstJitter = new LinkedList<Double>();
+	private List<Double> entityDataRates = new LinkedList<Double>(); // data rates
+	private Set<String> hostSet = new HashSet<String>();
+	private double portion = 1.0;
+	private Log logger = this.getLogger();
 	
 	public MeasureActivity(){
-		this.init();
+		this(0.95);
 	}
 	
-	public void init() {
-		this.outputBag = BagFactory.getInstance().newDefaultBag();
-		this.flowSrcLat = new LinkedList<Double>();
-		this.flowDstLat = new LinkedList<Double>();
-		this.flowSrcJitter = new LinkedList<Double>();
-		this.flowDstJitter = new LinkedList<Double>();
-		this.entityDataRates = new LinkedList<Double>();
-		this.hostSet = new HashSet<String>();
-		this.activityAddress = null;
-		this.activityLabel = null;
-		this.apName = null;
-		this.activityStart=-1;
-		this.activityEnd=-1;
-		this.activitySize=0;
-		this.activityVol=0;
+	public MeasureActivity(double portion){
+		outputBag = BagFactory.getInstance().newDefaultBag();
+		this.portion = portion;
+	}
+	
+	/**
+	 * The variables MUST be reset for a new input tuple.
+	 */
+	private void cleanup() {
+		outputBag.clear();
+		activityAddress = null;
+		activityLabel = null;
+		apName = null;
+		activityStart = null;
+		activityEnd = null;
+		activitySize = 0;
+		activityVol = 0;
+		flowSrcLat.clear();
+		flowDstLat.clear();
+		flowSrcJitter.clear();
+		flowDstJitter.clear();
+		entityDataRates.clear();
+		hostSet.clear();
 	}
 	
 	@Override
 	public DataBag exec(Tuple b) throws IOException {
-		init();
-		for ( Tuple t : (DataBag) b.get(0) ){
-			this.activityVol += 1;
+		cleanup();
+		DataBag entityBag = (DataBag) b.get(0);
+		logger.debug("***** Activity original volume: " + entityBag.size());
+		activityVol = (int) Math.round(entityBag.size()*portion);
+		long counter = activityVol;
+		for ( Tuple t :  entityBag ){
+			if ( counter <= 0 )
+				break;
+			counter--;
 			String ap = (String) t.get(1);
 			Double srcRttAvg = (Double) t.get(13);
 			Double dstRttAvg = (Double) t.get(14);
@@ -81,6 +93,12 @@ public class MeasureActivity extends EvalFunc<DataBag>{
 			String rspCT = (String) t.get(46);
 			Boolean itrr = (Boolean) t.get(50);
 			String label = (String) t.get(51);
+			
+			if ( reqTime == null || rspTime == null || rspDur == null ){
+				String msg = "*****Please make sure the fileds [reqTime, rspTime, rspDur] have no null value.";
+				logger.error(msg);
+				throw new IOException(msg);
+			}
 			
 			if ( reqHost != null )
 				hostSet.add(reqHost);
@@ -99,19 +117,25 @@ public class MeasureActivity extends EvalFunc<DataBag>{
 			}
 			if ( apName == null)
 				apName = ap;
-			if ( activityStart == -1)
+			
+			if ( activityStart == null){
 				activityStart = reqTime;
-			else if ( reqTime < activityStart )
-				activityStart = reqTime;
-			double rspend = reqTime + 0.01; // lower bounds
-			if (rspTime != null && rspDur != null)
-				rspend = rspTime+rspDur;
-			if ( activityEnd < rspend)
-				activityEnd = rspend;
+				activityEnd = rspTime+rspDur;
+			} else {
+				if ( reqTime < activityStart )
+					activityStart = reqTime;
+				if ( rspTime+rspDur > activityEnd )
+					activityEnd = rspTime+rspDur;
+			}
+			// Size
 			long tsize = 0;
 			if (reqPl != null && rspPl !=  null )
 				tsize = reqPl + rspPl;
 			activitySize += tsize;
+			double entityDuration = rspTime-reqTime+rspDur;
+			if ( entityDuration > 0)
+				entityDataRates.add(tsize/entityDuration);
+			// Time
 			if ( srcRttAvg != null )
 				this.flowSrcLat.add(srcRttAvg);
 			if ( dstRttAvg != null )
@@ -120,15 +144,8 @@ public class MeasureActivity extends EvalFunc<DataBag>{
 				this.flowSrcJitter.add(srcRttStd);
 			if ( dstRttStd != null )
 				this.flowDstJitter.add(dstRttStd);
-			double tdur = rspend - reqTime;
-			if ( tdur > 0)
-				this.entityDataRates.add(tsize/tdur);
 		}
-		
-		return assembleResult();
-	}
-
-	public DataBag assembleResult() {
+		// Prepare output
 		Tuple newT = TupleFactory.getInstance().newTuple();
 		newT.append(activityStart); //start time
 		double dur = activityEnd-activityStart;
