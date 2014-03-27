@@ -1,6 +1,8 @@
-sjtu.omnilab.pig.http
-sjtu.omnilab.pig.model.aem
-sjtu.omnilab.pig.model.servicegraph
-sjtu.omnilab.pig.utils
-sjtu.omnilab.pig.utils.tree
-sjtu.omnilab.pig.uuid
+com.piggybox.dissector
+com.piggybox.http
+com.piggybox.model.aem
+com.piggybox.model.servicegraph
+com.piggybox.stats
+com.piggybox.utils
+com.piggybox.utils.tree
+com.piggybox.uuid
