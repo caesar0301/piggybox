@@ -7,6 +7,14 @@ import org.apache.pig.EvalFunc;
 import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.Tuple;
 
+/**
+ * Extract the host name from given URL string.
+ * E.g., 
+ * INPUT: ('www.example.com/index.html')
+ * OUTPUT: ('www.example.com')
+ * @author chenxm
+ *
+ */
 public class ExtractUrlHost extends EvalFunc<String> {
 	private Pattern pattern = Pattern.compile("^(?:\\w+:?//)?([^:\\/\\?&]+)", Pattern.CASE_INSENSITIVE);
 

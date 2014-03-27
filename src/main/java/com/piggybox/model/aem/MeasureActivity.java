@@ -17,7 +17,6 @@ import org.apache.pig.data.TupleFactory;
 /**
  * Generate measures related to performance for each activity.
  * @author chenxm
- *
  */
 public class MeasureActivity extends EvalFunc<DataBag>{
 	private DataBag outputBag; // output result
@@ -148,9 +147,9 @@ public class MeasureActivity extends EvalFunc<DataBag>{
 		// Prepare output
 		Tuple newT = TupleFactory.getInstance().newTuple();
 		newT.append(activityStart); //start time
-		double dur = activityEnd-activityStart;
 		newT.append(activityVol); // entity count
 		newT.append(activitySize); // size
+		double dur = activityEnd-activityStart;
 		newT.append(dur); // duration
 		double dr = 0;
 		if ( dur > 0 )

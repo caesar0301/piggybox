@@ -10,7 +10,7 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.junit.Test;
 
-import com.piggybox.model.aem.ActivityCompletionTime;
+import com.piggybox.model.aem.PerceivedCompletionTime;
 import com.piggybox.utils.PigUtils;
 
 public class TestActivityCompletionTime {
@@ -21,7 +21,7 @@ public class TestActivityCompletionTime {
 	public void testActivityCompletionTime() throws IOException{
 		Tuple input = tupleFactory.newTuple();
 		input.append(prepareInput());
-		ActivityCompletionTime func = new ActivityCompletionTime(0.7);
+		PerceivedCompletionTime func = new PerceivedCompletionTime(0.7);
 		DataBag output = func.exec(input);
 		Assert.assertEquals(1.5, PigUtils.databagToList(output).get(0).get(0));
 	}

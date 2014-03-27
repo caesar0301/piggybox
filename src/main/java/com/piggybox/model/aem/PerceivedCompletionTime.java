@@ -9,18 +9,20 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 
 /**
- * Generate measures related to performance for each activity.
+ * Given a bag of (STime, ETime) pairs, the perceived duration is calculated.
+ * I.e., D = max(ETime)-min{STime}.
+ * This routine is involved in AEM model to calculate the activity completion time and session length.
  * @author chenxm
  *
  */
-public class ActivityCompletionTime extends EvalFunc<DataBag>{
+public class PerceivedCompletionTime extends EvalFunc<DataBag>{
 	private DataBag outputBag = BagFactory.getInstance().newDefaultBag(); // output result
 	private double portion = 1.0;
 	private Double activityStart = null; // activity start time
 	private Double activityEnd = null;
 	private long activityVol = 0;
 	
-	public ActivityCompletionTime(){
+	public PerceivedCompletionTime(){
 		this(0.95);
 	}
 	
@@ -29,7 +31,7 @@ public class ActivityCompletionTime extends EvalFunc<DataBag>{
 	 * From the start of the first entity to the end of the last one.
 	 * @param portion (Percentage) controls the number of entities involved to compute the completion time.
 	 */
-	public ActivityCompletionTime(double portion){
+	public PerceivedCompletionTime(double portion){
 		this.portion = portion;
 	}
 	
