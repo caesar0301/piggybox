@@ -1,4 +1,4 @@
-package com.piggybox.model;
+package com.piggybox.test;
 
 import com.google.common.net.InternetDomainName;
 

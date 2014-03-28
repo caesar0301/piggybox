@@ -1,4 +1,4 @@
-package com.piggybox.utils;
+package com.piggybox.test;
 
 import java.io.IOException;
 import java.util.UUID;

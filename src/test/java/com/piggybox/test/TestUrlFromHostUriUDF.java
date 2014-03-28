@@ -1,4 +1,4 @@
-package com.piggybox.http;
+package com.piggybox.test;
 
 import junit.framework.Assert;
 

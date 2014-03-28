@@ -1,4 +1,4 @@
-package com.piggybox.model;
+package com.piggybox.test;
 
 import java.io.IOException;
 

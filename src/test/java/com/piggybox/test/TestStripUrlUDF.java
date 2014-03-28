@@ -1,4 +1,4 @@
-package com.piggybox.http;
+package com.piggybox.test;
 
 import java.io.IOException;
 import java.util.HashMap;
