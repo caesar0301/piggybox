@@ -2,11 +2,10 @@ package com.piggybox.model.aem;
 
 import java.io.IOException;
 
-import org.apache.pig.EvalFunc;
-import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
-import org.apache.pig.data.TupleFactory;
+
+import com.piggybox.utils.SimpleEvalFunc;
 
 /**
  * Given a bag of (STime, ETime) pairs, the perceived duration is calculated.
@@ -15,8 +14,7 @@ import org.apache.pig.data.TupleFactory;
  * @author chenxm
  *
  */
-public class PerceivedCompletionTime extends EvalFunc<DataBag>{
-	private DataBag outputBag = BagFactory.getInstance().newDefaultBag(); // output result
+public class PerceivedCompletionTime extends SimpleEvalFunc<Double>{
 	private double portion = 1.0;
 	private Double activityStart = null; // activity start time
 	private Double activityEnd = null;
@@ -39,16 +37,15 @@ public class PerceivedCompletionTime extends EvalFunc<DataBag>{
 	 * The variables MUST be reset for a new input tuple.
 	 */
 	private void cleanup(){ 
-		outputBag.clear();
 		activityStart = null;
 		activityEnd = null;
 		activityVol = 0;
 	}
 	
-	@Override
-	public DataBag exec(Tuple b) throws IOException {
+	public Double call(DataBag b) throws IOException {
 		cleanup();
-		DataBag entityBag = (DataBag) b.get(0);
+		Double result;
+		DataBag entityBag = b;
 		activityVol = entityBag.size();
 		long actualNumber = Math.round(activityVol*portion);
 		for ( Tuple t :  entityBag ){
@@ -60,8 +57,9 @@ public class PerceivedCompletionTime extends EvalFunc<DataBag>{
 			Double eStartTime = (Double) t.get(0);
 			Double eEndTime = (Double) t.get(1);
 			
-			if ( eStartTime == null || eEndTime == null)
-				throw new IOException("The input tuple can not be null: " + eStartTime + ", " + eEndTime);
+			if ( eStartTime == null || eEndTime == null){
+				continue; // Skip invalid tuples
+			}
 
 			if ( activityStart == null){
 				activityStart = eStartTime;
@@ -74,13 +72,11 @@ public class PerceivedCompletionTime extends EvalFunc<DataBag>{
 				activityEnd = eEndTime;
 		}
 		
-		Tuple newT = TupleFactory.getInstance().newTuple();
 		try{
-			newT.append(activityEnd-activityStart);
+			result = activityEnd-activityStart;
 		} catch (Exception e){
-			newT.append(null);
+			result = null;
 		}
-		outputBag.add(newT);
-		return outputBag;
+		return result;
 	}
 }
