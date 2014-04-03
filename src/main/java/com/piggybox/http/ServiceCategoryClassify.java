@@ -60,7 +60,6 @@ public class ServiceCategoryClassify extends SimpleEvalFunc<String> {
 			if ( p.ifmatch(hostString)){
 				matched = true;
 				pattern = p;
-				System.out.println(p.getCategory());
 				break;
 			}
 		}
@@ -76,7 +75,6 @@ public class ServiceCategoryClassify extends SimpleEvalFunc<String> {
 	 * @param regexYaml
 	 */
 	private void initialize(InputStream regexYaml) {
-		System.out.println("Hello");
 		Yaml yaml = new Yaml(new SafeConstructor());
 	    Map<String,Object> regexConfig = (Map<String,Object>) yaml.load(regexYaml);
 	    List<Map<String, String>> hostRegexes = (List<Map<String, String>>) regexConfig.get("host_parser");
