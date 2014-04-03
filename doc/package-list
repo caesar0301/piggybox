@@ -1,8 +1,10 @@
+com.piggybox.bags
 com.piggybox.dissector
 com.piggybox.http
 com.piggybox.model.aem
 com.piggybox.model.servicegraph
 com.piggybox.stats
+com.piggybox.string
 com.piggybox.utils
 com.piggybox.utils.tree
 com.piggybox.uuid
