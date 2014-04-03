@@ -53,10 +53,10 @@ import com.piggybox.utils.SimpleEvalFunc;
 public class NthTupleFromBag extends SimpleEvalFunc<Tuple> {
 	private int index = 0;
 	
-	public Tuple call(int index, DataBag bag, Tuple defaultValue) throws IOException {
+	public Tuple call(Integer index, DataBag bag, Tuple defaultValue) throws IOException {
 		int i = 0;
 		for (Tuple t : bag) {
-			if ( index == i)
+			if ( index.intValue() == i)
 				return t;
 			i++;
 		}
