@@ -3,6 +3,7 @@ package com.piggybox.http;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +40,7 @@ public class ServiceCategoryClassify extends SimpleEvalFunc<String> {
 	private static final String REGEX_HOST_CATEGORY = "/host-regexes.yaml";
 	private List<HostPattern> hostParser = new LinkedList<HostPattern>();
 	private Map<String, Map<String, String>> categoryClassesParser;
+	private static Map<String, String> categoryCache = new HashMap<String, String>();
 
 	public ServiceCategoryClassify() throws IOException {
 		this(ServiceCategoryClassify.class.getResourceAsStream(REGEX_HOST_CATEGORY));
@@ -54,6 +56,15 @@ public class ServiceCategoryClassify extends SimpleEvalFunc<String> {
 	 * @return
 	 */
 	public String call(String hostString) {
+		if ( hostString == null )
+			return "unknown;"+getCategoryClasses(null);
+		
+		// Facilitate cache
+		if ( categoryCache.containsKey(hostString) ){
+			String category = categoryCache.get(hostString);
+			return String.format("%s;%s", category, getCategoryClasses(category));
+		}
+		
 		boolean matched = false;
 		HostPattern pattern = null;
 		for ( HostPattern p : hostParser ){
@@ -65,6 +76,7 @@ public class ServiceCategoryClassify extends SimpleEvalFunc<String> {
 		}
 		if (matched){
 			String category = pattern.getCategory();
+			categoryCache.put(category, getCategoryClasses(category));
 			return String.format("%s;%s", category, getCategoryClasses(category));
 		}
 		return "unknown;"+getCategoryClasses(null);
@@ -113,6 +125,8 @@ public class ServiceCategoryClassify extends SimpleEvalFunc<String> {
 		}
 		
 		public boolean ifmatch(String givenhost){
+			if ( givenhost == null )
+				return false;
 			Matcher matcher = pattern.matcher(givenhost);
 			return matcher.find() ? true : false;
 		}
