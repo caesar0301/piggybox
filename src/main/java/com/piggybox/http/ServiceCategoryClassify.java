@@ -40,6 +40,7 @@ public class ServiceCategoryClassify extends SimpleEvalFunc<String> {
 	private static final String REGEX_HOST_CATEGORY = "/host-regexes.yaml";
 	private List<HostPattern> hostParser = new LinkedList<HostPattern>();
 	private Map<String, Map<String, String>> categoryClassesParser;
+	private Map<String, String> subCategory1Parser;
 	private static Map<String, String> categoryCache = new HashMap<String, String>();
 
 	public ServiceCategoryClassify() throws IOException {
@@ -95,6 +96,7 @@ public class ServiceCategoryClassify extends SimpleEvalFunc<String> {
 	    	hostParser.add(new HostPattern(hostRegex.get("regex"), hostRegex.get("category")));
 	    }
 	    categoryClassesParser = (Map<String, Map<String, String>>) regexConfig.get("category_classes");
+            subCategory1Parser = (Map<String, String>) regexConfig.get("cls1_map");
 	}
 	
 	/**
@@ -105,7 +107,10 @@ public class ServiceCategoryClassify extends SimpleEvalFunc<String> {
 	private String getCategoryClasses(String category){
 		if (category != null && categoryClassesParser.containsKey(category)){
 			Map<String, String> classes = categoryClassesParser.get(category);
-			return String.format("%d;%d", classes.get("cls1"), classes.get("cls2"));
+			String cat1 = new String(classes.get("cls1"));
+			String cat2 = new String(classes.get("cls2"));
+			cat1 = subCategory1Parser.get(cat1) ? subCategory1Parser.contains(cat1) : cat1;
+			return String.format("%s;%s", cat1, cat2);
 		}
 		return "unknown;unknown"; // Default value when there is no registered category.
 	}

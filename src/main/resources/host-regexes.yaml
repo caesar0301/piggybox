@@ -1,6 +1,12 @@
+# This yaml file contains regexes to classify HTTP services according to their hosts.
+# These rules are extracted from Hangzhou mobile dataset @OMNI-Lab
+# host_parser: a list of regexes for different host names;
+# category_classes: a map of category and its subcategories (cls1 refers to
+# the service type and cls2 refers to service venders.)
+# cls1_map: a map of cls1 and its semantic meanings.
+
 host_parser:
   #### SPECIAL CASES TOP; AUTO GENERATED ####
-
   #03书吧
   - regex: 'dou03\.com'
     category: '03书吧'
@@ -3820,7 +3826,6 @@ host_parser:
 
 category_classes:
   ## Service category classification, derived from hzmobile data.
-
   03书吧:
     cls1: 1
     cls2: 100
@@ -10319,3 +10324,48 @@ category_classes:
   龙之谷:
     cls1: 11
     cls2: 214
+
+## Semantic map for class1 of categories.
+cls1_map:
+  1: 读书
+  2: 视频
+  3: 门户
+  4: 新闻
+  5: 网上购物
+  6: 搜索导航
+  7: 政府机构
+  8: 金融投资
+  9: 求职
+  10: 休闲娱乐
+  11: 游戏
+  12: 电子邮箱
+  13: 音乐
+  14: 数码科技
+  15: 生活工具
+  16: 图片服务
+  17: 下载更新
+  18: 体育
+  19: 社交网络
+  20: 移动软件
+  21: 汽车
+  22: 女性
+  23: 教育
+  24: 旅游
+  25: 论坛社区
+  26: 健康
+  27: 房产
+  28: 广告
+  29: 即时通讯
+  30: wap网关
+  31: 移动服务器
+  32: 微博
+  33: 主页博客
+  34: 公益
+  35: 星座
+  36: 笑话
+  37: 教育
+  38: 环保
+  39: 时尚
+  40: 书签收藏
+  41: CDN服务
+  42: 彩信中心
