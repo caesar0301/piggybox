@@ -15,6 +15,6 @@ public class TestServiceClassify {
 		String host = "web2.qq.com";
 		ServiceCategoryClassify scc = new ServiceCategoryClassify();
 		String result = scc.call(host);
-		Assert.assertEquals(result, "腾讯网页QQ2;29;924");
+		Assert.assertEquals(result, "腾讯网页QQ2;即时通讯;924");
 	}
 }
