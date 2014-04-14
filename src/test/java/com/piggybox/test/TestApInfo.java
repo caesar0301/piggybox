@@ -21,6 +21,8 @@ public class TestApInfo {
 		Assert.assertEquals((String) result.get(0), "包玉刚图书馆");
 		Assert.assertEquals((String) result.get(1), "LibBldg");
 		Assert.assertEquals((String) result.get(2), "PUB");
+		result = APBI.call(null); //test null input
+		Assert.assertEquals(result.get(0), null);
 		
 		GetAPBuildingInfo APBI2 = new GetAPBuildingInfo(false);
 		Tuple result2 = APBI2.call(APNameBuilding);

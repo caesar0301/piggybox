@@ -70,7 +70,13 @@ public class GetAPBuildingInfo extends SimpleEvalFunc<Tuple>{
 	}
 
 	public Tuple call(String APName){
+		// Default result
 		Tuple result = TupleFactory.getInstance().newTuple();
+		result.append(null);
+		result.append(null);
+		result.append(null);
+		if ( APName == null ) return result;
+		
 		if ( full_apname )  { // Given full AP name string
 			String[] parts = APName.split("-\\d+F-", 2);
 			String buildName = parts[0];
@@ -102,12 +108,6 @@ public class GetAPBuildingInfo extends SimpleEvalFunc<Tuple>{
 		} else { // Given build name, skip cache actions
 			if ( APNameDB.containsKey(APName) ) // Have item
 				result = getBuildInfo(APName);
-		}
-		// For default result
-		if ( result.size() == 0){
-			result.append(null);
-			result.append(null);
-			result.append(null);
 		}
 		return result;
 	}
