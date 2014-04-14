@@ -9,7 +9,7 @@ import org.junit.Test;
 import com.piggybox.omnilab.GetAPBuildingInfo;
 
 public class TestApInfo {
-	private static final String APNameFull = "BYGTSG-4F-01";
+	private static final String APNameFull = "MH-BYGTSG-4F-01";
 	private static final String APNameBuilding = "BYGTSG";
 	private static final String APNameInvalid = "BYGTSG-test";
 	

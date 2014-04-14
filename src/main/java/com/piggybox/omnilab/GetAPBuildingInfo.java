@@ -76,7 +76,7 @@ public class GetAPBuildingInfo extends SimpleEvalFunc<Tuple>{
 			String buildName = parts[0];
 			// Remove MH- prefix
 			if (buildName.startsWith("MH-"))
-				buildName = buildName.substring(0, 3);
+				buildName = buildName.substring(3, buildName.length());
 			// Check cache first
 			if ( APBN_RealBN_Cache.containsKey(buildName) ) { // Cache hit
 				String cacheRealBN = APBN_RealBN_Cache.get(buildName);
