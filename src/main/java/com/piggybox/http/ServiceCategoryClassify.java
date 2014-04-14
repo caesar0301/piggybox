@@ -1,6 +1,5 @@
 package com.piggybox.http;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -47,8 +46,17 @@ public class ServiceCategoryClassify extends SimpleEvalFunc<String> {
 		this(ServiceCategoryClassify.class.getResourceAsStream(REGEX_HOST_CATEGORY));
 	}
 
+	@SuppressWarnings("unchecked")
 	public ServiceCategoryClassify(InputStream regexYaml) {
-		initialize(regexYaml);
+		// Initialize the classification engine
+		Yaml yaml = new Yaml(new SafeConstructor());
+	    Map<String,Object> regexConfig = (Map<String,Object>) yaml.load(regexYaml);
+	    List<Map<String, String>> hostRegexes = (List<Map<String, String>>) regexConfig.get("host_parser");
+	    //System.out.println(hostRegexes);
+	    for(Map<String, String> hostRegex : hostRegexes)
+	    	hostParser.add(new HostPattern(hostRegex.get("regex"), hostRegex.get("category")));
+	    categoryClassesParser = (Map<String, Map<String, Integer>>) regexConfig.get("category_classes");
+	    subCategory1Parser = (Map<Integer, String>) regexConfig.get("cls1_map");
 	}
 	
 	/**
@@ -81,22 +89,6 @@ public class ServiceCategoryClassify extends SimpleEvalFunc<String> {
 			return String.format("%s;%s", category, getCategoryClasses(category));
 		}
 		return "unknown;"+getCategoryClasses(null);
-	}
-
-	/**
-	 * Initialize the classification engine
-	 * @param regexYaml
-	 */
-	private void initialize(InputStream regexYaml) {
-		Yaml yaml = new Yaml(new SafeConstructor());
-	    Map<String,Object> regexConfig = (Map<String,Object>) yaml.load(regexYaml);
-	    List<Map<String, String>> hostRegexes = (List<Map<String, String>>) regexConfig.get("host_parser");
-	    //System.out.println(hostRegexes);
-	    for(Map<String, String> hostRegex : hostRegexes){
-	    	hostParser.add(new HostPattern(hostRegex.get("regex"), hostRegex.get("category")));
-	    }
-	    categoryClassesParser = (Map<String, Map<String, Integer>>) regexConfig.get("category_classes");
-	    subCategory1Parser = (Map<Integer, String>) regexConfig.get("cls1_map");
 	}
 	
 	/**

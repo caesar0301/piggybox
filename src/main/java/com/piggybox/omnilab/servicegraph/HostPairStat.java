@@ -1,4 +1,4 @@
-package com.piggybox.model.servicegraph;
+package com.piggybox.omnilab.servicegraph;
 
 import java.io.IOException;
 import java.util.Iterator;

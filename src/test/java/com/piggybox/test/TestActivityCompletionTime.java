@@ -10,7 +10,7 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.junit.Test;
 
-import com.piggybox.model.aem.PerceivedCompletionTime;
+import com.piggybox.omnilab.aem.PerceivedCompletionTime;
 
 public class TestActivityCompletionTime {
 	private TupleFactory tupleFactory = TupleFactory.getInstance();

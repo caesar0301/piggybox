@@ -1,4 +1,4 @@
-package com.piggybox.model.aem;
+package com.piggybox.omnilab.aem;
 
 import java.util.HashMap;
 import java.util.Iterator;

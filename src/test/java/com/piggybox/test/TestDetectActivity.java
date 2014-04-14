@@ -11,7 +11,7 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.junit.Test;
 
-import com.piggybox.model.aem.DetectActivity;
+import com.piggybox.omnilab.aem.DetectActivity;
 import com.piggybox.utils.PigUtils;
 
 public class TestDetectActivity {

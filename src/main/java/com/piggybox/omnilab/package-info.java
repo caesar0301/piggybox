@@ -15,6 +15,6 @@
  */
 
 /**
- * User Defined Functions for creating data models.
+ * User Defined Functions for innner data models in OMNILAB (https://omnilab.sjtu.edu.cn).
  */
-package com.piggybox.model;
+package com.piggybox.omnilab;

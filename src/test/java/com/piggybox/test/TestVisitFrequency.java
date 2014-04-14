@@ -10,7 +10,7 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.junit.Test;
 
-import com.piggybox.model.aem.VisitFrequency;
+import com.piggybox.omnilab.aem.VisitFrequency;
 
 public class TestVisitFrequency {
 

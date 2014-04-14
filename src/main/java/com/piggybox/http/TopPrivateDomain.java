@@ -17,6 +17,7 @@ public class TopPrivateDomain  extends SimpleEvalFunc<String>{
 		return getTopPrivateDomain(url);
 	}
 	
+	@SuppressWarnings("deprecation")
 	private String getTopPrivateDomain(String url){
 		String host = getHost(url);
 		try {
