@@ -1,6 +1,7 @@
 package com.piggybox.omnilab;
 
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.pig.data.Tuple;
@@ -15,6 +16,7 @@ import com.piggybox.utils.SimpleEvalFunc;
  * Specifically for AP name, both full name string (the default mode, e.g. BYGTSG-4F-01) and
  * building name (e.g. BYGTSG) can be used.
  * If only building name is given, you can save processing time to declare this method with @full_apname param.
+ * But for accuracy, the full AP name is prefered.
  * <p>
  * For example:
  * <pre>
@@ -47,6 +49,7 @@ public class GetAPBuildingInfo extends SimpleEvalFunc<Tuple>{
 	private static final String AP_BUILDING_DATABASE = "/APNames-UTF8.yaml";
 	private Map<String, Map<String, String>> APNameDB;
 	private boolean full_apname = true;
+	private Map<String, String> APBN_RealBN_Cache = new HashMap<String, String>();
 	
 	public GetAPBuildingInfo(){
 		this(GetAPBuildingInfo.class.getResourceAsStream(AP_BUILDING_DATABASE), true);
@@ -71,31 +74,34 @@ public class GetAPBuildingInfo extends SimpleEvalFunc<Tuple>{
 		if ( full_apname )  { // Given full AP name string
 			String[] parts = APName.split("-\\d+F-", 2);
 			String buildName = parts[0];
-			if ( APNameDB.containsKey(buildName)) { // Building name found
-				Map<String, String> buildInfo = APNameDB.get(buildName);
-				result.append(buildInfo.get("dsp"));
-				result.append(buildInfo.get("typ"));
-				result.append(buildInfo.get("usr"));
-			} else { // Worst case; try to find its real building name
-				String realBuildName = null;
-				for ( String BN : APNameDB.keySet()){
-					if ( buildName.contains(BN) )
-						realBuildName = BN;
-				}
-				if ( realBuildName != null ){
-					Map<String, String> buildInfo = APNameDB.get(realBuildName);
-					result.append(buildInfo.get("dsp"));
-					result.append(buildInfo.get("typ"));
-					result.append(buildInfo.get("usr"));
+			// Remove MH- prefix
+			if (buildName.startsWith("MH-"))
+				buildName = buildName.substring(0, 3);
+			// Check cache first
+			if ( APBN_RealBN_Cache.containsKey(buildName) ) { // Cache hit
+				String cacheRealBN = APBN_RealBN_Cache.get(buildName);
+				result = getBuildInfo(cacheRealBN);
+			} else { // Cache miss
+				if ( APNameDB.containsKey(buildName)) { // Building name found
+					result = getBuildInfo(buildName);
+					APBN_RealBN_Cache.put(buildName, buildName); // Cache the real building name
+				} else { // Worst case; try to find its longest matched building name
+					String realBuildName = null;
+					for ( String BN : APNameDB.keySet())
+						if ( buildName.contains(BN) )
+							if ( realBuildName == null )
+								realBuildName = BN;
+							else if ( BN.length() > realBuildName.length() ) // Get the longest match
+								realBuildName = BN;
+					if ( realBuildName != null ){
+						result = getBuildInfo(realBuildName);
+						APBN_RealBN_Cache.put(buildName, realBuildName); // Cache the real building name
+					}
 				}
 			}
-		} else { // Given build name
-			if ( APNameDB.containsKey(APName) ){ // Have item
-				Map<String, String> buildInfo = APNameDB.get(APName);
-				result.append(buildInfo.get("dsp"));
-				result.append(buildInfo.get("typ"));
-				result.append(buildInfo.get("usr"));
-			}
+		} else { // Given build name, skip cache actions
+			if ( APNameDB.containsKey(APName) ) // Have item
+				result = getBuildInfo(APName);
 		}
 		// For default result
 		if ( result.size() == 0){
@@ -103,6 +109,15 @@ public class GetAPBuildingInfo extends SimpleEvalFunc<Tuple>{
 			result.append(null);
 			result.append(null);
 		}
+		return result;
+	}
+	
+	private Tuple getBuildInfo(String realBuildName){
+		Tuple result = TupleFactory.getInstance().newTuple();
+		Map<String, String> buildInfo = APNameDB.get(realBuildName);
+		result.append(buildInfo.get("dsp"));
+		result.append(buildInfo.get("typ"));
+		result.append(buildInfo.get("usr"));
 		return result;
 	}
 }
