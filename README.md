@@ -1,6 +1,8 @@
 PiggyBox
 ==========
 
+[![Build Status](https://travis-ci.org/caesar0301/piggybox.svg?branch=master)](https://travis-ci.org/caesar0301/piggybox)
+
 Useful Pig User-Defined Functions (UDF) we are using everyday at [Omnilab, SJTU](http://omnilab.sjtu.edu.cn/).
 
 
