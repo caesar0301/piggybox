@@ -10,8 +10,26 @@ import com.piggybox.utils.SimpleEvalFunc;
 /**
  * Given a user agent (only mobile currently), classify the application as 'video',
  * 'music', 'social', 'im' and so on. Current 2014-03.
- * @version alpha
+ * 
+ * <p>
+ * For example:
+ * <pre>
+ * {@code
+ * DEFINE AppCategoryClassify com.piggybox.http.AppCategoryClassify();
+ * 
+ * -- input: 
+ * -- (微信/1.0)
+ * input = LOAD 'input' AS (useragent:CHARARRAY);
+ * 
+ * -- output: 
+ * -- (im)
+ * output = FOREACH input GENERATE AppCategoryClassify(useragent); 
+ * } 
+ * </pre>
+ * </p>
+ * 
  * @author chenxm
+ * @version alpha
  */
 public class AppCategoryClassify extends SimpleEvalFunc<String> {
 	public static Map<String, Pattern> regexMap;
