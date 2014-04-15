@@ -5,12 +5,14 @@ import java.io.IOException;
 import junit.framework.Assert;
 
 import org.apache.pig.backend.executionengine.ExecException;
+import org.apache.pig.builtin.BagToTuple;
 import org.apache.pig.data.BagFactory;
 import org.apache.pig.data.DataBag;
 import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.junit.Test;
 
+import com.piggybox.bags.JoinEachBy;
 import com.piggybox.bags.MergeTuples;
 import com.piggybox.bags.NthTupleFromBag;
 
@@ -49,4 +51,19 @@ public class TestBags {
 		tuple.append(v2);
 		return tuple;
 	}
+	
+	@Test
+	public void testJoinBy() throws ExecException{
+		DataBag input = BagFactory.getInstance().newDefaultBag();
+		Tuple inputTuple = TupleFactory.getInstance().newTuple();
+		inputTuple.append("hello");
+		inputTuple.append("world");
+		input.add(inputTuple);
+		JoinEachBy joinBy = new JoinEachBy();
+		DataBag output = joinBy.call(input, ";");
+		for (Tuple t : output ){
+			Assert.assertEquals(t.get(0), "hello;world");
+		}
+	}
+
 }
