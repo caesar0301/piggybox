@@ -10,7 +10,8 @@ import org.apache.pig.data.TupleFactory;
 import org.apache.pig.impl.logicalLayer.schema.Schema;
 
 /**
- * Given a bag of timing pairs (STime, ETIme) , calculate the visit frequency from user reading times.
+ * Given a bag of timing pairs (STime, ETIme), calculate the visit frequency from user reading times.
+ * The input pairs should be kept in ascending order.
  * Return a bag with single tuple.
  * @author chenxm
  *
@@ -18,8 +19,8 @@ import org.apache.pig.impl.logicalLayer.schema.Schema;
 public class VisitFrequency extends AccumulatorEvalFunc<DataBag> {
 	private Double lastSTime = null;
 	private Double lastETime = null;
-	private long totalPairs = 0;
-	private Double readingTimeEx = 0.0;
+	private long number = 0;
+	private Double readingTimeMean = 0.0;
 	private Double totalReadingTime = 0.0;
 	private Double VF = 0.0;
 
@@ -32,27 +33,31 @@ public class VisitFrequency extends AccumulatorEvalFunc<DataBag> {
 		for (Tuple tuple : inputBag) {
 			Double stime = (Double) tuple.get(0);
 			Double etime = (Double) tuple.get(1);
-			if (lastSTime != null ){
+			if (stime == null || etime == null )
+				continue;
+			if (lastETime != null && stime >= lastETime){
 				updateReadingTime(stime-lastETime);
-				VF = 1.0 / readingTimeEx;
+				VF = 1.0 / readingTimeMean;
 			}
 			lastSTime = stime;
 			lastETime = etime;
-			totalPairs++;
 		}
 	}
 	
 	private void updateReadingTime(Double rt){
 		totalReadingTime += rt;
-		readingTimeEx = 1.0*(readingTimeEx*(totalPairs-1) + rt)/(totalPairs);
+		number += 1;
+		// Calculate expected reading time for whole observations
+		// instead of moving average.
+		readingTimeMean = totalReadingTime/number;
 	}
 
 	@Override
 	public void cleanup() {
 		lastSTime = null;
 		lastETime = null;
-		totalPairs = 0;
-		readingTimeEx = 0.0;
+		number = 0;
+		readingTimeMean = 0.0;
 		totalReadingTime = 0.0;
 		VF = 0.0;
 	}

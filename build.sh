@@ -1,19 +1,23 @@
 #!/bin/bash
-SRC=target/piggybox-*-with-dependencies.jar
-DEST=/home/chenxm/tera/workspace/omnilab-misc/sjtuwifi/lib/piggybox.jar
-
 echo "Packaging classes ... "
 mvn package
+
+##-------------##
+# Personal use ##
+##-------------##
+SRC=target/piggybox-*-with-dependencies.jar
+PYUDF=py/pyudf.py
 BACKUP=/home/chenxm/tera/workspace/omnilab-misc/sjtuwifi/libs
 
 echo "Backuping to $BACKUP ... "
-cp target/piggybox-*-with-dependencies.jar $BACKUP/piggybox.jar
-cp py/pyudf.py $BACKUP/pyudf.py
+cp $SRC $BACKUP/piggybox.jar
+cp $PYUDF $BACKUP/pyudf.py
 
 PIGLIBS=/home/chenxm/.pig/libs
 echo "Copying to local pig path: $PIGLIBS ... "
-cp target/piggybox-*-with-dependencies.jar $PIGLIBS/piggybox.jar
-cp py/pyudf.py $PIGLIBS/pyudf.py
+cp $SRC $PIGLIBS/piggybox.jar
+cp $PYUDF $PIGLIBS/pyudf.py
 
 echo "Uploading piggybox.jar to Hadoop cluster ... "
-scp -P 3022 target/piggybox-*-with-dependencies.jar chenxm@hadoopjob.omnilab.sjtu.edu.cn:$PIGLIBS/piggybox.jar
+scp -P 3022 $SRC $PYUDF \
+    chenxm@hadoopjob.omnilab.sjtu.edu.cn:$PIGLIBS/
