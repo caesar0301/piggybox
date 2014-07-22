@@ -33,7 +33,7 @@ In your pig script, you can call these pre-defined UDF as introduced in [pig off
 Documentation and API
 -----------
 
-Java API: http://caesar0301.github.io/piggybox/doc/
+Java API: http://caesar0301.github.io/piggybox/
 
 Authors
 -----------
