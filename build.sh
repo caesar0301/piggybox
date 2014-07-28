@@ -6,7 +6,7 @@ mvn package
 # Personal use ##
 ##-------------##
 SRC=target/piggybox-*-with-dependencies.jar
-PYUDF=py/pyudf.py
+PYUDF=src/main/python/pyudf.py
 
 PIGLIBS=/home/chenxm/.pig/libs
 echo "Copying to local pig path: $PIGLIBS ... "

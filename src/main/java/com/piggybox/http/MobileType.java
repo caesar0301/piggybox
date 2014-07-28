@@ -14,12 +14,14 @@ public class MobileType extends SimpleEvalFunc<String> {
 	private static Pattern mobilePattern;
 
 	public String call(String useragent) {
-		String ua = useragent.toLowerCase();
-		String type = getDeviceType(ua);
-		if (type != null) {
-			return type.toLowerCase();
-		} else
-			return "unknown";
+		if (useragent != null){
+			String ua = useragent.toLowerCase();
+			String type = getDeviceType(ua);
+			if (type != null) {
+				return type.toLowerCase();
+			}
+		}
+		return "unknown";
 	}
 
 	/**
