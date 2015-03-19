@@ -6,7 +6,7 @@ import junit.framework.Assert;
 
 import org.junit.Test;
 
-import com.piggybox.omnilab.ParseTimeString;
+import com.piggybox.omnilab.hzmob.ParseTimeString;
 
 public class TestParseTimeString {
 

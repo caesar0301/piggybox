@@ -6,7 +6,7 @@ import org.apache.pig.backend.executionengine.ExecException;
 import org.apache.pig.data.Tuple;
 import org.junit.Test;
 
-import com.piggybox.omnilab.GetAPBuildingInfo;
+import com.piggybox.omnilab.wifi.GetAPBuildingInfo;
 
 public class TestApInfo {
 	private static final String APNameFull = "MH-BYGTSG-4F-01";

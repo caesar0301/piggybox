@@ -1,4 +1,4 @@
-package com.piggybox.omnilab;
+package com.piggybox.omnilab.hzmob;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -15,8 +15,8 @@ import com.piggybox.utils.SimpleEvalFunc;
  * For example:
  * <pre>
  * {@code
- * DEFINE parseTimeString com.piggybox.omnilab.parseTimeString();
- * DEFINE parseTimeStringISO com.piggybox.omnilab.parseTimeString("iso");
+ * DEFINE parseTimeString com.piggybox.omnilab.hzmob.parseTimeString();
+ * DEFINE parseTimeStringISO com.piggybox.omnilab.hzmob.parseTimeString("iso");
  * 
  * -- input: 
  * -- (7-AUG-12 11.05.07.418 PM)

@@ -1,4 +1,4 @@
-package com.piggybox.omnilab;
+package com.piggybox.omnilab.wifi;
 
 import java.io.InputStream;
 import java.util.HashMap;
@@ -21,8 +21,8 @@ import com.piggybox.utils.SimpleEvalFunc;
  * For example:
  * <pre>
  * {@code
- * DEFINE getAPBuildingInfo com.piggybox.omnilab.getAPBuildingInfo();
- * DEFINE getBuildingInfo com.piggybox.omnilab.getAPBuildingInfo(false); // use @full_apname param
+ * DEFINE getAPBuildingInfo com.piggybox.omnilab.wifi.getAPBuildingInfo();
+ * DEFINE getBuildingInfo com.piggybox.omnilab.wifi.getAPBuildingInfo(false); // use @full_apname param
  * 
  * -- input: 
  * -- (BYGTSG-1F-01)
