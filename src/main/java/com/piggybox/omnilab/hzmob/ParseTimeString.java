@@ -2,6 +2,9 @@ package com.piggybox.omnilab.hzmob;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -69,6 +72,7 @@ public class ParseTimeString extends SimpleEvalFunc<Tuple>{
 		if (timeISO == null)
 			return null;
 		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH.mm.ss.SSS");
+		sdf.setTimeZone(TimeZone.getTimeZone("GMT+08"));
 		return String.format("%.3f", sdf.parse(timeISO).getTime()/1000.0);
 	}
 	
@@ -80,6 +84,21 @@ public class ParseTimeString extends SimpleEvalFunc<Tuple>{
 	private String parseTimeISO(String timestr){
 		if (timestr == null)
 			return null;
+
+		final Map<String, Integer> monthMap = new HashMap<String, Integer>();
+		monthMap.put("JAN", 1);
+		monthMap.put("FEB", 2);
+		monthMap.put("MAR", 3);
+		monthMap.put("APR", 4);
+		monthMap.put("MAY", 5);
+		monthMap.put("JUNE", 6);
+		monthMap.put("JULY", 7);
+		monthMap.put("AUG", 8);
+		monthMap.put("SEPT", 9);
+		monthMap.put("OCT", 10);
+		monthMap.put("NOV", 11);
+		monthMap.put("DEC", 12);
+
 		Pattern p = Pattern.compile("(\\d{1,2})-([^-]*)-(\\d{2,4})\\s((?:\\d+\\.){3}\\d+\\s+[^\\s]*)",
 				Pattern.CASE_INSENSITIVE);
 		Matcher m = p.matcher(timestr);
@@ -91,10 +110,8 @@ public class ParseTimeString extends SimpleEvalFunc<Tuple>{
 			int month = -1;
 			if (monthMatcher.find()) // Match the number N out of "N月*"
 				month = Integer.parseInt(monthMatcher.group());
-			else if ( rawmonth.equals("AUG"))
-				month = 8;
-			else if (rawmonth.equals("OCT"))
-				month = 10;
+			else if ( monthMap.containsKey(rawmonth) )
+				month = monthMap.get(rawmonth);
 			else
 				return null;
 			// Parse year
