@@ -26,7 +26,7 @@ import java.util.Map;
  * 
  * -- output: 
  * -- ({(A,11),(C,7),(B,8)})
- * output = FOREACH input GENERATE SumEachBy(OneBag, '0', '1'); 
+ * output = FOREACH input GENERATE SumEachBy(OneBag, 0, 1);
  * } 
  * </pre>
  * </p>

@@ -27,11 +27,11 @@ import java.util.Map;
  * 
  * -- output: 
  * -- ({(A,2),(C,1),(B,1)})
- * output = FOREACH input GENERATE CountEachBy(OneBag, '0'); 
+ * output = FOREACH input GENERATE CountEachBy(OneBag, 0);
  * 
  * -- output: 
  * -- ({(a,1),(b,2),(c,1)})
- * output = FOREACH input GENERATE CountEachBy(OneBag, '1'); 
+ * output = FOREACH input GENERATE CountEachBy(OneBag, 1);
  * } 
  * </pre>
  * </p>
