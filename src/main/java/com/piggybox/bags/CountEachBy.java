@@ -47,7 +47,7 @@ public class CountEachBy extends SimpleEvalFunc<DataBag> {
     public DataBag call(DataBag bag, Integer index) throws ExecException {
 
         // calculate frequency in memory
-        Map<String, Long> counts = new HashMap<String, Long>();
+        Map<Object, Long> counts = new HashMap<Object, Long>();
         for (Tuple tuple : bag ) {
             String key = tuple.get(index).toString();
             if ( !counts.containsKey(key) ) {
@@ -58,7 +58,7 @@ public class CountEachBy extends SimpleEvalFunc<DataBag> {
 
         // output to bag
         DataBag outBag = bagFactory.newDefaultBag();
-        for ( String key : counts.keySet() ) {
+        for ( Object key : counts.keySet() ) {
             Tuple new_tuple = tupleFactory.newTuple();
             new_tuple.append(key);
             new_tuple.append(counts.get(key));

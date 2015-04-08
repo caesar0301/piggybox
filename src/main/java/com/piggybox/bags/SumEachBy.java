@@ -42,18 +42,18 @@ public class SumEachBy extends SimpleEvalFunc<DataBag> {
     public DataBag call(DataBag input, Integer target, Integer value ) throws ExecException {
 
         // get sum stat
-        Map<String, Double> sumAll = new HashMap<String, Double>();
+        Map<Object, Double> sumAll = new HashMap<Object, Double>();
         for ( Tuple t : input ) {
-            String k = t.get(target).toString();
+            Object k = t.get(target);
             Double v = new Double(t.get(value).toString());
             if ( ! sumAll.containsKey(k) )
                 sumAll.put(k, 0.0);
             sumAll.put(k, sumAll.get(k) + v);
         }
 
-        // return databag
+        // return data bag
         DataBag output = bagFactory.newDefaultBag();
-        for ( String k : sumAll.keySet() ) {
+        for ( Object k : sumAll.keySet() ) {
             Tuple new_tuple = tupleFactory.newTuple(k);
             new_tuple.append(sumAll.get(k));
             output.add(new_tuple);
