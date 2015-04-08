@@ -2,6 +2,7 @@ package com.piggybox.test;
 
 import java.io.IOException;
 
+import com.piggybox.bags.*;
 import junit.framework.Assert;
 
 import org.apache.pig.backend.executionengine.ExecException;
@@ -12,19 +13,27 @@ import org.apache.pig.data.Tuple;
 import org.apache.pig.data.TupleFactory;
 import org.junit.Test;
 
-import com.piggybox.bags.JoinEachBy;
-import com.piggybox.bags.MergeTuples;
-import com.piggybox.bags.NthTupleFromBag;
-
 public class TestBags {
 	private DataBag oneItemBag;
+	private DataBag twoItemBag;
 	
 	public TestBags(){
 		// input: {(10), (11)}
 		Tuple t1 = createTuple(10);
 		Tuple t2 = createTuple(11);
 		oneItemBag = BagFactory.getInstance().newDefaultBag();
-		oneItemBag.add(t1); oneItemBag.add(t2);
+		oneItemBag.add(t1);
+		oneItemBag.add(t2);
+
+		Tuple t3 = createTuple("A"); t3.append(5);
+		Tuple t4 = createTuple("A"); t4.append(6);
+		Tuple t5 = createTuple("B"); t5.append(7);
+		Tuple t6 = createTuple("C"); t6.append(8);
+		twoItemBag = BagFactory.getInstance().newDefaultBag();
+		twoItemBag.add(t3);
+		twoItemBag.add(t4);
+		twoItemBag.add(t5);
+		twoItemBag.add(t6);
 	}
 
 	@Test
@@ -63,6 +72,30 @@ public class TestBags {
 		DataBag output = joinBy.call(input, ";");
 		for (Tuple t : output ){
 			Assert.assertEquals(t.get(0), "hello;world");
+		}
+	}
+
+	@Test
+	public void TestCountEachBy() throws ExecException {
+		CountEachBy ceb = new CountEachBy();
+		DataBag result = ceb.call(twoItemBag, 0);
+		for ( Tuple t : result ) {
+			if ( t.get(0).equals("A") )
+				Assert.assertEquals(t.get(1), new Long(2));
+			if ( t.get(0).equals("B") )
+				Assert.assertEquals(t.get(1), new Long(1));
+		}
+	}
+
+	@Test
+	public void TestSumEachBy() throws ExecException {
+		SumEachBy ceb = new SumEachBy();
+		DataBag result = ceb.call(twoItemBag, 0, 1);
+		for ( Tuple t : result ) {
+			if ( t.get(0).equals("A") )
+				Assert.assertEquals(t.get(1), new Double(11));
+			if ( t.get(0).equals("B") )
+				Assert.assertEquals(t.get(1), new Double(7));
 		}
 	}
 

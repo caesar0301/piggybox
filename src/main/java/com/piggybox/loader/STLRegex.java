@@ -32,9 +32,7 @@ public class STLRegex extends LoadFunc{
     /**
      * Constructs a Pig loader that uses regular expressions.
      *
-     * @param delimiter
-     *            the single byte character that is used to separate fields.
-     *            ("\t" is the default.)
+     * @param delimiter the regex string to separate fields.
      */
     public STLRegex() {
     	this("\t");
