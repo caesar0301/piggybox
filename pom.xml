@@ -87,6 +87,7 @@
 				<configuration>
 					<show>public</show>
 					<nohelp>true</nohelp>
+					<additionalparam>-Xdoclint:none</additionalparam>
 				</configuration>
 			</plugin>
 		</plugins>
